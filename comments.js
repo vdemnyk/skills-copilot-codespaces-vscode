@@ -2,24 +2,35 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
+const mongoose = require('mongoose');
 
-// create express app
+// create web server
 const app = express();
-app.use(bodyParser.json());
+
+// connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/comments', { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.error('MongoDB connection error:', err));
+
+// create comment schema
+const commentSchema = new mongoose.Schema({
+    name: String,
+    text: String
+});
+
+// create comment model
+const Comment = mongoose.model('Comment', commentSchema);
+
+// middleware
 app.use(cors());
+app.use(bodyParser.json());
 
-// define port
-const PORT = process.env.PORT || 3000;
-
-// define path to comments file
-const commentsFilePath = 'comments.json';
-
-// function to read comments from file
-function readComments() {
-    if (fs.existsSync(commentsFilePath)) {
-        const data = fs.readFileSync(commentsFilePath);
-        return JSON.parse(data);
+// API routes
+app.get('/comments', async (req, res) => {
+    try {
+        const comments = await Comment.find();
+        res.json(comments);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
-    return [];
-}
+});git add comments.js
